@@ -150,7 +150,7 @@ public final class ColorListEditorScreen extends class_437 {
             ui.outline(fx, fy, fw, fh, this.d(12), Math.max(1.0f, this.u()), this.search.isEmpty() ? UiRenderer.white(0.08f) : UiPalette.accent(0.6f));
             ui.icon(UiIcon.SEARCH, fx + this.d(12), fy + (fh - this.d(14)) / 2.0f, this.d(14), UiRenderer.white(0.5f));
             boolean caret = (System.currentTimeMillis() / 500L) % 2L == 0L;
-            ui.text(this.search.isEmpty() ? "Search blocks..." : this.search + (caret ? "|" : ""), fx + this.d(34), fy + (fh - this.d(13)) / 2.0f - this.d(1), this.d(13), 0, this.search.isEmpty() ? UiRenderer.white(0.35f) : UiRenderer.white(0.92f));
+            ui.text(this.search.isEmpty() ? (picker ? "Search..." : "Search blocks...") : this.search + (caret ? "|" : ""), fx + this.d(34), fy + (fh - this.d(13)) / 2.0f - this.d(1), this.d(13), 0, this.search.isEmpty() ? UiRenderer.white(0.35f) : UiRenderer.white(0.92f));
             if (!this.search.isEmpty()) {
                 float cx = fx + fw - this.d(28);
                 ui.icon(UiIcon.CLOSE, cx, fy + (fh - this.d(12)) / 2.0f, this.d(12), UiRenderer.white(0.5f));
