@@ -43,7 +43,7 @@ public final class NametagsModule extends Module {
     private final NumberSetting size = new NumberSetting(EncryptedString.of("Size"), 50.0, 200.0, 100.0, 5.0).getValue(EncryptedString.of("Overall tag size in percent"));
     private final BooleanSetting shrink = new BooleanSetting(EncryptedString.of("Shrink With Distance"), true).setDescription(EncryptedString.of("Farther targets get smaller tags"));
     private final NumberSetting minSize = new NumberSetting(EncryptedString.of("Smallest Size"), 20.0, 100.0, 50.0, 5.0).getValue(EncryptedString.of("Size limit for far away targets in percent"));
-    private final BooleanSetting zoomScaling = new BooleanSetting(EncryptedString.of("Zoom Aware"), true).setDescription(EncryptedString.of("Zooming in (Zoomify, OptiFine zoom...) makes tags bigger like walking closer instead of keeping them tiny"));
+    private final BooleanSetting zoomScaling = new BooleanSetting(EncryptedString.of("Zoom Aware"), true).setDescription(EncryptedString.of("Tags grow with the zoom of Zoomify and other zoom mods so they keep their size next to the zoomed in player"));
     private final BooleanSetting shrinkClose = new BooleanSetting(EncryptedString.of("Shrink Up Close"), true).setDescription(EncryptedString.of("Tags get smaller when you walk right up to someone so they do not cover them"));
     private final NumberSetting closeRange = new NumberSetting(EncryptedString.of("Close Range"), 2.0, 12.0, 6.0, 0.5).getValue(EncryptedString.of("Distance in blocks where tags start shrinking"));
     private final NumberSetting closeSize = new NumberSetting(EncryptedString.of("Close Size"), 30.0, 100.0, 60.0, 5.0).getValue(EncryptedString.of("Tag size in percent when right next to the target"));
@@ -109,11 +109,7 @@ public final class NametagsModule extends Module {
     private float sizeAt(double blocks, float zoom) {
         float factor = (float) (this.size.getValue() / 100.0);
         if (this.shrink.getValue()) {
-            // zoomed in, the target looks as if it was this much closer
-            double seen = Math.max(blocks, 0.0) / (this.zoomScaling.getValue() ? zoom : 1.0f);
-            factor *= (float) Math.max(this.minSize.getValue() / 100.0, Math.min(1.0, 10.0 / (seen + 4.0)));
-        } else if (this.zoomScaling.getValue()) {
-            factor *= (float) Math.min(4.0, zoom);
+            factor *= (float) Math.max(this.minSize.getValue() / 100.0, Math.min(1.0, 10.0 / (Math.max(blocks, 0.0) + 4.0)));
         }
         if (this.shrinkClose.getValue()) {
             // uses the real distance, so zooming never makes tags smaller
@@ -123,6 +119,11 @@ public final class NametagsModule extends Module {
                 double low = this.closeSize.getValue() / 100.0;
                 factor *= (float) (low + (1.0 - low) * t);
             }
+        }
+        if (this.zoomScaling.getValue()) {
+            // zooming magnifies the target on screen by exactly this much; the tag grows with it, so it keeps the
+            // same size relative to the player instead of looking smaller
+            factor *= Math.min(16.0f, zoom);
         }
         return factor;
     }
