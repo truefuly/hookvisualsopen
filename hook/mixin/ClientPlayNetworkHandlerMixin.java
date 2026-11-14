@@ -22,11 +22,9 @@ import hook.event.events.EntitySpawnEvent;
 import hook.event.events.LightUpdateEvent;
 import hook.event.events.TotemPopEvent;
 import hook.manager.EventManager;
-import hook.utils.ChunkLightTracker;
 import net.minecraft.class_1937;
 import net.minecraft.class_2604;
 import net.minecraft.class_2663;
-import net.minecraft.class_2666;
 import net.minecraft.class_2672;
 import net.minecraft.class_2676;
 import net.minecraft.class_310;
@@ -48,19 +46,12 @@ public abstract class ClientPlayNetworkHandlerMixin {
 
     @Inject(method={"method_11128"}, at={@At(value="TAIL")}, remap=false)
     private void onChunkData(class_2672 var1, CallbackInfo var2) {
-        ChunkLightTracker.ingest(var1.method_11523(), var1.method_11524(), var1.method_38599());
         EventManager.b(new ChunkDataEvent(var1));
     }
 
     @Inject(method={"method_11143"}, at={@At(value="TAIL")}, remap=false)
     private void onLightUpdate(class_2676 var1, CallbackInfo var2) {
-        ChunkLightTracker.ingest(var1.method_11558(), var1.method_11554(), var1.method_38600());
         EventManager.b(new LightUpdateEvent(var1));
-    }
-
-    @Inject(method={"method_11107"}, at={@At(value="TAIL")}, remap=false)
-    private void onUnloadChunk(class_2666 var1, CallbackInfo var2) {
-        ChunkLightTracker.unload(var1.comp_1726().field_9181, var1.comp_1726().field_9180);
     }
 
     @Inject(method={"method_11112"}, at={@At(value="HEAD")}, cancellable=true, remap=false)

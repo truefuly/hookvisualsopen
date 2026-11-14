@@ -393,6 +393,14 @@ public final class SettingsManager {
                 JsonObject var1 = JsonParser.parseString((String)Files.readString(this.settingsPath)).getAsJsonObject();
                 this.validate(var1);
                 this.applyInternal(var1);
+                // drop saved data of modules that no longer exist, right away instead of on the next change
+                java.util.Set<String> known = new java.util.HashSet<String>();
+                for (Module m : this.modules()) known.add(m.getName().toString());
+                boolean stale = false;
+                for (String key : var1.keySet()) {
+                    if (!key.startsWith("_") && !known.contains(key)) { stale = true; break; }
+                }
+                if (stale) this.writeCurrent();
             }
         }
         catch (Exception var2) {

@@ -1,7 +1,6 @@
 package hook.feature;
 
 import hook.module.ModuleManager;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
 import net.minecraft.class_304;
 import net.minecraft.class_3675;
@@ -19,10 +18,6 @@ import java.lang.reflect.Method;
 public final class SwordcoreModuleSupport {
     private static Method releaseForcedKeys;
     private static Method resetTransientState;
-    private static class_304 smartSwordKey;
-    private static boolean smartSwordKeyWasDown;
-    private static boolean smartSwordSwitchActive;
-    private static String previousSmartSwordActivation = "Hold";
 
     private SwordcoreModuleSupport() {}
 
@@ -30,6 +25,8 @@ public final class SwordcoreModuleSupport {
         SwordcoreClient.swordConfig = SwordcoreConfig.load();
         SwordcoreClient.swordConfig.enabled = true;
         SwordcoreClient.swordConfig.chatLogs = false;
+        // Without "premium" Swordcore forces its sounds (the bell on every target swing) back on each tick
+        SwordcoreClient.premiumFeaturesEnabled = true;
         bindSmartSwordKey();
         ParticleFactoryRegistry.getInstance().register(SwordcoreParticles.MOVEMENT_RESIST, MovementResistParticle.Factory::new);
         ParticleFactoryRegistry.getInstance().register(SwordcoreParticles.MOVEMENT_SYNC_INNER, MovementSyncInnerParticle.Factory::new);
@@ -45,9 +42,8 @@ public final class SwordcoreModuleSupport {
     }
 
     private static void bindSmartSwordKey() {
-        class_304 key = KeyBindingHelper.registerKeyBinding(new class_304(
-                "key.hookvisuals.smart_sword", class_3675.class_307.field_1668, 82, class_304.class_11900.field_62556));
-        smartSwordKey = key;
+        // Smart Sword was removed; Swordcore still needs a key object, so give it one that is never shown or bound
+        class_304 key = new class_304("key.hookvisuals.smart_sword", class_3675.class_307.field_1668, -1, class_304.class_11900.field_62556);
         try {
             Field field = SwordcoreClient.class.getDeclaredField("smartSwordKey");
             field.setAccessible(true);
@@ -69,33 +65,8 @@ public final class SwordcoreModuleSupport {
         if (hook.Hook.INSTANCE != null && hook.Hook.INSTANCE.getModuleManager() != null) {
             ModuleManager manager = hook.Hook.INSTANCE.getModuleManager();
             sync(manager);
-            updateSmartSwordKey(manager);
         }
         SwordcoreClient.processAttackInput(client);
-    }
-
-    private static void updateSmartSwordKey(ModuleManager manager) {
-        if (smartSwordKey == null) return;
-        SmartSwordModule module = (SmartSwordModule)manager.getModuleByClass(SmartSwordModule.class);
-        boolean enabled = module != null && module.isEnabled();
-        String activation = module == null ? "Hold" : module.activation.getMode();
-        if (!enabled) {
-            smartSwordSwitchActive = false;
-            smartSwordKeyWasDown = false;
-            smartSwordKey.method_23481(false);
-        } else if (!activation.equals(previousSmartSwordActivation)) {
-            smartSwordSwitchActive = false;
-            smartSwordKeyWasDown = false;
-        }
-        previousSmartSwordActivation = activation;
-        if (enabled && "Switch".equals(activation)) {
-            boolean down = smartSwordKey.method_1434();
-            if (down && !smartSwordKeyWasDown) smartSwordSwitchActive = !smartSwordSwitchActive;
-            smartSwordKeyWasDown = down;
-            smartSwordKey.method_23481(smartSwordSwitchActive);
-        } else {
-            smartSwordKeyWasDown = smartSwordKey.method_1434();
-        }
     }
 
     private static void invoke(Method method, Object... args) {
@@ -134,6 +105,7 @@ public final class SwordcoreModuleSupport {
         config.freeHitting = true;
         // Swordcore rings a bell every time the target swings; never play its feedback sounds
         config.soundEffects = false;
+        SwordcoreClient.premiumFeaturesEnabled = true; // otherwise Swordcore turns its sounds back on every tick
         config.autoWTapAutosprint = false;
 
         MovementSyncModule sync = (MovementSyncModule)manager.getModuleByClass(MovementSyncModule.class);
@@ -158,47 +130,13 @@ public final class SwordcoreModuleSupport {
             config.movementEqualizerRange = sync.equalizerRange.getFloatValue();
         }
 
-        SmartSwordModule smartSword = (SmartSwordModule)manager.getModuleByClass(SmartSwordModule.class);
-        config.smartSword = smartSword != null && smartSword.isEnabled();
-        if (smartSword != null) config.targetRange = smartSword.targetRange.getFloatValue();
-
-        ShieldDisableModule shield = (ShieldDisableModule)manager.getModuleByClass(ShieldDisableModule.class);
-        config.shieldDisable = shield != null && shield.isEnabled();
-        if (shield != null) {
-            config.shieldDisableMode = switch (shield.mode.getMode()) {
-                case "Stun" -> SwordcoreConfig.ShieldDisableMode.STUN;
-                case "Stun Sneak" -> SwordcoreConfig.ShieldDisableMode.STUN_SNEAK;
-                default -> SwordcoreConfig.ShieldDisableMode.NORMAL;
-            };
-        }
-
-        MovementResistModule resist = (MovementResistModule)manager.getModuleByClass(MovementResistModule.class);
-        config.movementResisting = resist != null && resist.isEnabled();
-        if (resist != null) {
-            config.movementResistingRange = resist.range.getFloatValue();
-            config.movementResistEscape = resist.escape.getValue();
-        }
-
-        STappingModule sTap = (STappingModule)manager.getModuleByClass(STappingModule.class);
-        config.sTapping = sTap != null && sTap.isEnabled();
-        if (sTap != null) config.sTapLength = sTap.duration.getIntValue();
-
-        JumpFollowingModule jump = (JumpFollowingModule)manager.getModuleByClass(JumpFollowingModule.class);
-        config.jumpFollowingMode = jump == null || !jump.isEnabled()
-                ? SwordcoreConfig.JumpFollowingMode.OFF
-                : switch (jump.mode.getMode()) {
-                    case "Neutral Based" -> SwordcoreConfig.JumpFollowingMode.NEUTRAL_BASED;
-                    case "Off" -> SwordcoreConfig.JumpFollowingMode.OFF;
-                    default -> SwordcoreConfig.JumpFollowingMode.ON;
-                };
-        if (jump != null) {
-            config.jumpFollowingRespectsResist = jump.respectResist.getValue();
-            config.preventBackDuringAggressiveJump = jump.preventBackDuringJump.getValue();
-        }
-
-        SprintHitFollowModule sprintFollow = (SprintHitFollowModule)manager.getModuleByClass(SprintHitFollowModule.class);
-        config.sprintHitFollowThrough = sprintFollow != null && sprintFollow.isEnabled();
-        if (sprintFollow != null) config.sprintHitJumpDelay = sprintFollow.jumpDelay.getIntValue();
+        // the Smart Sword, Shield Disable, Movement Resist, S-Tapping, Jump Following and Sprint Hit Follow modules were removed
+        config.smartSword = false;
+        config.shieldDisable = false;
+        config.movementResisting = false;
+        config.sTapping = false;
+        config.jumpFollowingMode = SwordcoreConfig.JumpFollowingMode.OFF;
+        config.sprintHitFollowThrough = false;
 
         TrueJumpResetModule jumpReset = (TrueJumpResetModule)manager.getModuleByClass(TrueJumpResetModule.class);
         config.jumpResetting = jumpReset != null && jumpReset.isEnabled();

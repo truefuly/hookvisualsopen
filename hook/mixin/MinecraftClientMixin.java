@@ -26,7 +26,6 @@ import hook.event.events.ResolutionChangedEvent;
 import hook.event.events.SetScreenEvent;
 import hook.event.events.TickEvent;
 import hook.manager.EventManager;
-import hook.utils.FlagAlarm;
 import net.minecraft.class_1041;
 import net.minecraft.class_310;
 import net.minecraft.class_437;
@@ -54,7 +53,6 @@ public class MinecraftClientMixin {
     @Inject(method={"tick"}, at={@At(value="HEAD")})
     private void onTick(CallbackInfo ci) {
         hook.feature.SwordcoreModuleSupport.onClientTick((class_310)(Object)this);
-        FlagAlarm.tick((class_310)(Object)this);
         if (this.field_1687 != null) {
             EventManager.b(new TickEvent());
         }

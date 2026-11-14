@@ -1,55 +1,29 @@
-/*
- * Decompiled with CFR 0.152.
- * 
- * Could not load the following classes:
- *  com.mojang.logging.LogUtils
- *  org.slf4j.Logger
- */
 package com.hookaddon;
 
-import com.hookaddon.command.HookCommand;
-import com.hookaddon.compat.HookBridge;
-import com.hookaddon.hud.HookStatusHud;
-import com.hookaddon.modules.AutoAreaMiner;
-import com.hookaddon.modules.AutoSchematicBuilder;
-import com.hookaddon.modules.AutoSpawner;
-import com.hookaddon.persist.HookStore;
-import com.hookaddon.task.TaskManager;
 import com.mojang.logging.LogUtils;
 import hook.Hook;
-import hook.compat.meteorclient.addons.MeteorAddon;
-import hook.compat.meteorclient.commands.Commands;
-import hook.compat.meteorclient.systems.hud.Hud;
-import hook.compat.meteorclient.systems.hud.HudGroup;
-import hook.compat.meteorclient.systems.modules.Category;
-import hook.compat.meteorclient.systems.modules.Modules;
 import org.slf4j.Logger;
 
-public class HookAddon
-extends MeteorAddon {
+/** Loads the saved Hook profile once the client has started. */
+public class HookAddon {
     public static final Logger LOG = LogUtils.getLogger();
-    public static final Category CATEGORY = new Category("HookVisuals");
-    public static final HudGroup HUD_GROUP = new HudGroup("HookVisuals");
 
-    @Override
-    public void onRegisterCategories() {
-        Modules.registerCategory(CATEGORY);
-    }
-
-    @Override
     public void onInitialize() {
-        LOG.info("Initializing Hook Addon");
-        TaskManager.setLogSink(message -> LOG.debug("[task] {}", message));
-        HookStore.ensureDirectories();
-        // The automation modules (Auto Schematic Builder, Auto Spawner, Auto Area Miner), their
-        // command, HUD element and bridge were removed from the client.
+        removeOldAddonFolder();
         Hook.INSTANCE.getSettingsManager().loadProfile();
         LOG.info("Hook Addon ready");
     }
 
-    @Override
-    public String getPackage() {
-        return "com.hookaddon";
+    /** The removed automation modules kept their data in config/hook-addon; delete it if nothing but empty folders is left. */
+    private static void removeOldAddonFolder() {
+        java.nio.file.Path dir = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("hook-addon");
+        if (!java.nio.file.Files.isDirectory(dir)) return;
+        try (java.util.stream.Stream<java.nio.file.Path> walk = java.nio.file.Files.walk(dir)) {
+            java.util.List<java.nio.file.Path> all = walk.sorted(java.util.Comparator.reverseOrder()).toList();
+            if (all.stream().anyMatch(java.nio.file.Files::isRegularFile)) return;
+            for (java.nio.file.Path p : all) java.nio.file.Files.deleteIfExists(p);
+        } catch (Exception e) {
+            LOG.warn("Could not remove the old hook-addon folder: {}", e.getMessage());
+        }
     }
 }
-

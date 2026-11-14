@@ -13,7 +13,6 @@
 package hook.mixin;
 
 import hook.event.events.Render2DEvent;
-import hook.feature.OgScoreboardModule;
 import hook.manager.EventManager;
 import hook.utils.RenderUtils;
 import net.minecraft.class_329;
@@ -30,13 +29,6 @@ public class InGameHudMixin {
     private void onRenderHud(class_332 ctx, class_9779 rtc, CallbackInfo ci) {
         RenderUtils.setContext(ctx);
         EventManager.b(new Render2DEvent(ctx, rtc.method_60637(true)));
-    }
-
-    @Inject(method={"renderScoreboardSidebar(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/client/render/RenderTickCounter;)V"}, at={@At(value="HEAD")}, cancellable=true)
-    private void hideVanillaSidebar(class_332 context, class_9779 tickCounter, CallbackInfo ci) {
-        if (OgScoreboardModule.shouldHideVanillaSidebar()) {
-            ci.cancel();
-        }
     }
 }
 

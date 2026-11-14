@@ -12,8 +12,6 @@ package hook.feature;
 import hook.Hook;
 import hook.event.EventListener;
 import hook.event.events.TickEvent;
-import hook.feature.RtpBaseFinderModule;
-import hook.feature.TunnelBaseFinderModule;
 import hook.module.Category;
 import hook.module.Module;
 import hook.module.setting.NumberSetting;
@@ -50,14 +48,6 @@ extends Module {
         }
         // with a chest/container open the slot ids belong to that container - wait until it is closed
         if (this.mc.field_1724.field_7512 != this.mc.field_1724.field_7498) {
-            return;
-        }
-        RtpBaseFinderModule rtpFinder = (RtpBaseFinderModule)Hook.INSTANCE.MODULE_MANAGER.getModuleByClass(RtpBaseFinderModule.class);
-        if (rtpFinder != null && rtpFinder.isEnabled() && rtpFinder.isRepairingActive()) {
-            return;
-        }
-        TunnelBaseFinderModule tunnelFinder = (TunnelBaseFinderModule)Hook.INSTANCE.MODULE_MANAGER.getModuleByClass(TunnelBaseFinderModule.class);
-        if (tunnelFinder != null && tunnelFinder.isEnabled() && tunnelFinder.isDigging()) {
             return;
         }
         if (this.mc.field_1724.method_31548().method_5438(40).method_7909() == class_1802.field_8288) {
