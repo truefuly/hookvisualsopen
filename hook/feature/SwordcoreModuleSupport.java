@@ -113,6 +113,7 @@ public final class SwordcoreModuleSupport {
         config.enabled = true;
         config.chatLogs = false;
         config.freeHitting = true; // never block swings at the air
+        config.soundEffects = false; // no bell/beep sounds in fights
         config.movementSyncing = false;
         config.smartSword = false;
         config.shieldDisable = false;
@@ -131,6 +132,8 @@ public final class SwordcoreModuleSupport {
         config.chatLogs = false;
         // Swordcore's "free hitting" off = swings at the air get cancelled; keep vanilla behaviour
         config.freeHitting = true;
+        // Swordcore rings a bell every time the target swings; never play its feedback sounds
+        config.soundEffects = false;
         config.autoWTapAutosprint = false;
 
         MovementSyncModule sync = (MovementSyncModule)manager.getModuleByClass(MovementSyncModule.class);
