@@ -43,6 +43,10 @@ public final class NametagsModule extends Module {
     private final NumberSetting size = new NumberSetting(EncryptedString.of("Size"), 50.0, 200.0, 100.0, 5.0).getValue(EncryptedString.of("Overall tag size in percent"));
     private final BooleanSetting shrink = new BooleanSetting(EncryptedString.of("Shrink With Distance"), true).setDescription(EncryptedString.of("Farther targets get smaller tags"));
     private final NumberSetting minSize = new NumberSetting(EncryptedString.of("Smallest Size"), 20.0, 100.0, 50.0, 5.0).getValue(EncryptedString.of("Size limit for far away targets in percent"));
+    private final BooleanSetting zoomScaling = new BooleanSetting(EncryptedString.of("Zoom Aware"), true).setDescription(EncryptedString.of("Zooming in (Zoomify, OptiFine zoom...) makes tags bigger like walking closer instead of keeping them tiny"));
+    private final BooleanSetting shrinkClose = new BooleanSetting(EncryptedString.of("Shrink Up Close"), true).setDescription(EncryptedString.of("Tags get smaller when you walk right up to someone so they do not cover them"));
+    private final NumberSetting closeRange = new NumberSetting(EncryptedString.of("Close Range"), 2.0, 12.0, 6.0, 0.5).getValue(EncryptedString.of("Distance in blocks where tags start shrinking"));
+    private final NumberSetting closeSize = new NumberSetting(EncryptedString.of("Close Size"), 30.0, 100.0, 60.0, 5.0).getValue(EncryptedString.of("Tag size in percent when right next to the target"));
     private final NumberSetting range = new NumberSetting(EncryptedString.of("Range"), 16.0, 256.0, 128.0, 8.0).getValue(EncryptedString.of("Maximum distance in blocks"));
     private final BooleanSetting throughWalls = new BooleanSetting(EncryptedString.of("Through Walls"), true).setDescription(EncryptedString.of("Also shows targets you cannot see"));
     private final ModeSetting<HealthMode> health = new ModeSetting<HealthMode>(EncryptedString.of("Health"), HealthMode.Number, HealthMode.class).setDescription(EncryptedString.of("How health is shown"));
@@ -59,8 +63,11 @@ public final class NametagsModule extends Module {
 
     public NametagsModule() {
         super(EncryptedString.of("Nametags"), EncryptedString.of("Detailed tags with health, ping and equipment above players"), -1, Category.RENDER);
-        this.addSettings(this.players, this.hostiles, this.passives, this.items, this.self, this.size, this.shrink, this.minSize, this.range, this.throughWalls,
+        this.addSettings(this.players, this.hostiles, this.passives, this.items, this.self, this.size, this.shrink, this.minSize, this.zoomScaling, this.shrinkClose, this.closeRange, this.closeSize, this.range, this.throughWalls,
                 this.health, this.ping, this.distance, this.gameMode, this.equipment, this.durability, this.maxTags, this.background);
+        hook.module.setting.SettingVisibility.set(this.minSize, this.shrink::getValue);
+        hook.module.setting.SettingVisibility.set(this.closeRange, this.shrinkClose::getValue);
+        hook.module.setting.SettingVisibility.set(this.closeSize, this.shrinkClose::getValue);
         instance = this;
     }
 
@@ -87,15 +94,40 @@ public final class NametagsModule extends Module {
         }
     }
 
-    private float sizeAt(double blocks) {
+    /**
+     * How much the view is zoomed in compared to the normal FOV setting (1 = no zoom). Read from this frame's
+     * projection, so it works with any zoom mod. Wider views (sprinting, speed) count as 1.
+     */
+    private float zoomFactor() {
+        float scale = RenderVisibility.projectionScaleY();
+        if (scale <= 0.0f) return 1.0f;
+        int fov = (Integer) this.mc.field_1690.method_41808().method_41753();
+        float normal = (float) (1.0 / Math.tan(Math.toRadians(fov) / 2.0));
+        return Math.max(1.0f, scale / normal);
+    }
+
+    private float sizeAt(double blocks, float zoom) {
         float factor = (float) (this.size.getValue() / 100.0);
         if (this.shrink.getValue()) {
-            factor *= (float) Math.max(this.minSize.getValue() / 100.0, Math.min(1.0, 10.0 / (Math.max(blocks, 0.0) + 4.0)));
+            // zoomed in, the target looks as if it was this much closer
+            double seen = Math.max(blocks, 0.0) / (this.zoomScaling.getValue() ? zoom : 1.0f);
+            factor *= (float) Math.max(this.minSize.getValue() / 100.0, Math.min(1.0, 10.0 / (seen + 4.0)));
+        } else if (this.zoomScaling.getValue()) {
+            factor *= (float) Math.min(4.0, zoom);
+        }
+        if (this.shrinkClose.getValue()) {
+            // uses the real distance, so zooming never makes tags smaller
+            double near = this.closeRange.getValue();
+            if (blocks < near) {
+                double t = Math.max(0.0, Math.min(1.0, (blocks - 1.0) / Math.max(0.5, near - 1.0)));
+                double low = this.closeSize.getValue() / 100.0;
+                factor *= (float) (low + (1.0 - low) * t);
+            }
         }
         return factor;
     }
 
-    private record Tag(class_1297 entity, double distance, float x, float y) {
+    private record Tag(class_1297 entity, double distance, float x, float y, float zoom) {
     }
 
     @EventListener
@@ -105,6 +137,7 @@ public final class NametagsModule extends Module {
         int ww = window.method_4489();
         int wh = window.method_4506();
         double max = this.range.getValue();
+        float zoom = this.zoomFactor();
         List<Tag> tags = new ArrayList<>();
         for (class_1297 entity : this.mc.field_1687.method_18112()) {
             if (!targets(entity)) continue;
@@ -115,7 +148,7 @@ public final class NametagsModule extends Module {
             if (!this.throughWalls.getValue() && entity instanceof class_1309 living && !this.mc.field_1724.method_6057(living)) continue;
             if (!RenderVisibility.project(hx, hy, hz, ww, wh, this.screen)) continue;
             if (this.screen[0] < -300 || this.screen[0] > ww + 300 || this.screen[1] < -300 || this.screen[1] > wh + 300) continue;
-            tags.add(new Tag(entity, dist, this.screen[0], this.screen[1]));
+            tags.add(new Tag(entity, dist, this.screen[0], this.screen[1], zoom));
         }
         if (tags.isEmpty()) return;
         tags.sort(Comparator.comparingDouble(Tag::distance).reversed());
@@ -136,7 +169,7 @@ public final class NametagsModule extends Module {
 
     private void drawTag(class_332 ctx, UiRenderer ui, float gui, Tag tag) {
         class_1297 entity = tag.entity();
-        float unit = gui * this.sizeAt(tag.distance());
+        float unit = gui * this.sizeAt(tag.distance(), tag.zoom());
         float textPx = 7.5f * unit;
         float smallPx = 5.5f * unit;
         float gap = 4.0f * unit;

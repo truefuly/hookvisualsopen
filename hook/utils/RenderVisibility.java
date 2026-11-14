@@ -25,6 +25,7 @@ public final class RenderVisibility {
     private static double originY;
     private static double originZ;
     private static boolean ready;
+    private static float projectionScaleY;
 
     private RenderVisibility() {
     }
@@ -48,6 +49,7 @@ public final class RenderVisibility {
         boolean bl = ready = CLIP.isFinite() && Double.isFinite(var2) && Double.isFinite(var4) && Double.isFinite(var6);
         if (ready) {
             FRUSTUM.set((Matrix4fc)CLIP);
+            projectionScaleY = Math.abs(var0.m11());
             originX = var2;
             originY = var4;
             originZ = var6;
@@ -74,6 +76,11 @@ public final class RenderVisibility {
         out[0] = (clip.x / clip.w + 1.0f) * 0.5f * windowWidth;
         out[1] = (1.0f - clip.y / clip.w) * 0.5f * windowHeight;
         return true;
+    }
+
+    /** 1 / tan(vertical fov / 2) of this frame (changes with zoom), 0 when unknown. */
+    public static float projectionScaleY() {
+        return ready ? projectionScaleY : 0.0f;
     }
 
     public static double cameraDistance(double x, double y, double z) {

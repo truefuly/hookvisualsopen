@@ -93,7 +93,8 @@
     "ResourcePackBlockMixin",
     "HitGlowMixins",
     "AttackHookMixin",
-    "SplashOverlayMixin"
+    "SplashOverlayMixin",
+    "NoFogMixin"
   ],
   "injectors": {
     "defaultRequire": 1

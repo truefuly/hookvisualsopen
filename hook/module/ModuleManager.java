@@ -113,6 +113,7 @@ import hook.feature.XpShopModule;
 import hook.feature.CrateOpenerModule;
 import hook.feature.ResourceBlockerModule;
 import hook.feature.NametagsModule;
+import hook.feature.NoFogModule;
 import hook.feature.HitGlowModule;
 import hook.module.Category;
 import hook.module.Module;
@@ -182,6 +183,7 @@ public final class ModuleManager {
         this.in(Category.RENDER, new SpawnerNotifyModule());
         this.in(Category.RENDER, new TargetHudModule());
         this.in(Category.RENDER, new NametagsModule());
+        this.in(Category.RENDER, new NoFogModule());
         this.in(Category.RENDER, new HitGlowModule());
         this.a(new VerseFallModuleBridge("HUD Lyrics", "Shows the lyrics of the current song on your HUD.", "HUD Lyrics"));
         this.safe("3D Character", Character3dModule::new);
