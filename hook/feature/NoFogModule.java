@@ -33,6 +33,7 @@ public final class NoFogModule extends Module {
     private final BooleanSetting environment = new BooleanSetting(EncryptedString.of("Weather & Biome Fog"), true).setDescription(EncryptedString.of("Rain, thunder, nether and end fog"));
     private final BooleanSetting sky = new BooleanSetting(EncryptedString.of("Sky Fog"), true).setDescription(EncryptedString.of("Fog blending the sky into the horizon"));
     private final BooleanSetting clouds = new BooleanSetting(EncryptedString.of("Cloud Fog"), true).setDescription(EncryptedString.of("Fog that fades far away clouds"));
+    private final BooleanSetting darkSky = new BooleanSetting(EncryptedString.of("Dark Sky & Void"), true).setDescription(EncryptedString.of("Removes the black sky below the horizon and the black void fog near the world bottom (also in Freecam)"));
     private final BooleanSetting water = new BooleanSetting(EncryptedString.of("Water"), true).setDescription(EncryptedString.of("Clear view underwater"));
     private final BooleanSetting lava = new BooleanSetting(EncryptedString.of("Lava"), true).setDescription(EncryptedString.of("Clear view inside lava"));
     private final BooleanSetting snow = new BooleanSetting(EncryptedString.of("Powder Snow"), true).setDescription(EncryptedString.of("Clear view inside powder snow"));
@@ -44,13 +45,19 @@ public final class NoFogModule extends Module {
 
     public NoFogModule() {
         super(EncryptedString.of("No Fog"), EncryptedString.of("Removes or customizes every kind of fog"), -1, Category.RENDER);
-        this.addSettings(this.mode, this.start, this.end, this.distance, this.environment, this.sky, this.clouds,
+        this.addSettings(this.mode, this.start, this.end, this.distance, this.environment, this.sky, this.clouds, this.darkSky,
                 this.water, this.lava, this.snow, this.blindness, this.darkness, this.tint, this.color, this.tintStrength);
         SettingVisibility.set(this.start, () -> this.mode.getValue() == Mode.Custom);
         SettingVisibility.set(this.end, () -> this.mode.getValue() == Mode.Custom);
         SettingVisibility.set(this.color, this.tint::getValue);
         SettingVisibility.set(this.tintStrength, this.tint::getValue);
         instance = this;
+    }
+
+    /** Whether the black sky disc and void darkness should be skipped. */
+    public static boolean removesDarkSky() {
+        NoFogModule m = instance;
+        return m != null && m.isEnabled() && m.darkSky.getValue();
     }
 
     /**

@@ -94,7 +94,9 @@
     "HitGlowMixins",
     "AttackHookMixin",
     "SplashOverlayMixin",
-    "NoFogMixin"
+    "NoFogMixin",
+    "NoFogSkyMixin",
+    "NoFogVoidMixin"
   ],
   "injectors": {
     "defaultRequire": 1
