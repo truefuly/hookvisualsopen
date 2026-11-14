@@ -1652,7 +1652,7 @@ public final class HookUiController {
     private void openPicker(ItemSetting var1) {
         this.picking = var1;
         this.pickQuery = "";
-        this.pickItems = this.host.items();
+        this.pickItems = var1.blocksOnly() ? this.host.items().stream().filter(var1::accepts).toList() : this.host.items();
         this.pickScroll[0] = 0.0f;
         this.pickScroll[1] = 0.0f;
         UiAudio.play(UiAudio.Cue.OPEN);
@@ -1678,7 +1678,7 @@ public final class HookUiController {
             var1.shadow(var6, var7, var4, var5, this.d(20.0f), this.d(34.0f), UiRenderer.argb(0.55f, 0, 0, 0));
             var1.round(var6, var7, var4, var5, this.d(20.0f), UiRenderer.argb(0.94f, 24, 25, 29));
             var1.outline(var6, var7, var4, var5, this.d(20.0f), Math.max(1.0f, this.u * 0.9f), UiRenderer.white(0.1f));
-            var1.text("Select item", var6 + this.d(22.0f), var7 + this.d(20.0f), this.d(17.0f), 1, TEXT);
+            var1.text(this.picking != null && this.picking.blocksOnly() ? "Select block" : "Select item", var6 + this.d(22.0f), var7 + this.d(20.0f), this.d(17.0f), 1, TEXT);
             float var9 = this.d(30.0f);
             float var10 = var6 + var4 - this.d(18.0f) - var9;
             float var11 = var7 + this.d(16.0f);

@@ -25,8 +25,6 @@ public final class SwordcoreModuleSupport {
         SwordcoreClient.swordConfig = SwordcoreConfig.load();
         SwordcoreClient.swordConfig.enabled = true;
         SwordcoreClient.swordConfig.chatLogs = false;
-        // Without "premium" Swordcore forces its sounds (the bell on every target swing) back on each tick
-        SwordcoreClient.premiumFeaturesEnabled = true;
         bindSmartSwordKey();
         ParticleFactoryRegistry.getInstance().register(SwordcoreParticles.MOVEMENT_RESIST, MovementResistParticle.Factory::new);
         ParticleFactoryRegistry.getInstance().register(SwordcoreParticles.MOVEMENT_SYNC_INNER, MovementSyncInnerParticle.Factory::new);
@@ -103,9 +101,8 @@ public final class SwordcoreModuleSupport {
         config.chatLogs = false;
         // Swordcore's "free hitting" off = swings at the air get cancelled; keep vanilla behaviour
         config.freeHitting = true;
-        // Swordcore rings a bell every time the target swings; never play its feedback sounds
+        // Swordcore rings a bell every time the target swings; its sounds are muted by SwordcoreSoundMuteMixin
         config.soundEffects = false;
-        SwordcoreClient.premiumFeaturesEnabled = true; // otherwise Swordcore turns its sounds back on every tick
         config.autoWTapAutosprint = false;
 
         MovementSyncModule sync = (MovementSyncModule)manager.getModuleByClass(MovementSyncModule.class);

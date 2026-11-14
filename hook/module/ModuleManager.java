@@ -22,6 +22,9 @@ import hook.feature.MovementSyncModule;
 import hook.feature.TrueJumpResetModule;
 import hook.feature.AutoToolModule;
 import hook.feature.AutoTotemModule;
+import hook.feature.AutoClickerModule;
+import hook.feature.AntiBreakModule;
+import hook.feature.AutoMinerModule;
 import hook.feature.AutoTpaModule;
 import hook.feature.XbowCartModule;
 import hook.feature.InstaCartModule;
@@ -108,6 +111,7 @@ public final class ModuleManager {
         this.in(Category.COMBAT, new PearlCatchModule());
         this.in(Category.COMBAT, new XbowCartModule());
         this.in(Category.COMBAT, new InstaCartModule());
+        this.in(Category.COMBAT, new AutoClickerModule());
         this.in(Category.MACROS, new AutoTpaModule());
         this.in(Category.MACROS, new XpShopModule());
         this.in(Category.MACROS, new CrateOpenerModule());
@@ -121,6 +125,8 @@ public final class ModuleManager {
         this.in(Category.MISC, new NameProtectModule());
         this.in(Category.MISC, new SkinProtectModule());
         this.in(Category.MISC, new ResourceBlockerModule());
+        this.in(Category.MISC, new AntiBreakModule());
+        this.in(Category.MISC, new AutoMinerModule());
         // Render: seeing things in the world
         this.in(Category.RENDER, new FreecamModule());
         this.a(new FreelookModule());

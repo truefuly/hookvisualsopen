@@ -94,7 +94,9 @@
     "SplashOverlayMixin",
     "NoFogMixin",
     "NoFogSkyMixin",
-    "NoFogVoidMixin"
+    "NoFogVoidMixin",
+    "SwordcoreSoundMuteMixin",
+    "AntiBreakMixin"
   ],
   "injectors": {
     "defaultRequire": 1
