@@ -247,6 +247,10 @@ public final class KeyUtils {
         if (n < 0) {
             return false;
         }
+        // module keys (macros, crystal, freecam movement...) only count while you play, never while typing in a screen
+        if (Hook.mc.field_1755 != null) {
+            return false;
+        }
         return n <= 7 ? GLFW.glfwGetMouseButton((long)Hook.mc.method_22683().method_4490(), (int)n) == 1 : GLFW.glfwGetKey((long)Hook.mc.method_22683().method_4490(), (int)n) == 1;
     }
 }

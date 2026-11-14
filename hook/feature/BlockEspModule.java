@@ -54,8 +54,8 @@ import net.minecraft.class_7923;
 public class BlockEspModule
 extends Module {
     private static final int MAX_RENDERED_BLOCKS = 4096;
-    private final NumberSetting alpha = new NumberSetting(EncryptedString.of("Alpha"), 0.0, 255.0, 53.0, 1.0);
-    private final BooleanSetting tracers = new BooleanSetting(EncryptedString.of("Tracers"), false);
+    private final hook.utils.EspStyle style = new hook.utils.EspStyle(hook.utils.EspStyle.Shape.Both, 45, 0xFF5AC8FF);
+    private final NumberSetting boxSize = new NumberSetting(EncryptedString.of("Box Size"), 50.0, 100.0, 96.0, 1.0).getValue(EncryptedString.of("Size of the box in percent of a full block"));
     private final StorageBlocksSetting blocks = BlockEspModule.createBlockPalette();
     private final boolean rotatedOnly;
     private final Map<Long, List<BlockEntry>> results = new HashMap<Long, List<BlockEntry>>();
@@ -72,7 +72,8 @@ extends Module {
     public BlockEspModule() {
         super(EncryptedString.of("Block ESP"), EncryptedString.of("Searches and highlights any selected Minecraft block"), -1, Category.RENDER);
         this.rotatedOnly = false;
-        this.addSettings(this.alpha, this.tracers, this.blocks);
+        this.addSettings(this.style.settings());
+        this.addSettings(this.boxSize, this.blocks);
     }
 
     protected BlockEspModule(CharSequence name, CharSequence description, Set<String> defaultBlocks, boolean rotatedOnly) {
@@ -91,7 +92,8 @@ extends Module {
             this.blocks.add(id.toString(), block.method_9518().getString(), block.method_8389(), selectedByDefault, color);
         }
         this.rotatedOnly = rotatedOnly;
-        this.addSettings(this.alpha, this.tracers, this.blocks);
+        this.addSettings(this.style.settings());
+        this.addSettings(this.boxSize, this.blocks);
     }
 
     private static StorageBlocksSetting createBlockPalette() {
@@ -267,23 +269,21 @@ extends Module {
         if (camera == null || !camera.method_19332()) {
             return;
         }
-        this.renderBoxes.clear();
-        this.renderLines.clear();
-        class_243 tracerStart = RenderUtils.getTracerStart(camera);
-        int opacity = this.alpha.getIntValue();
+        if (!this.style.begin(camera)) {
+            return;
+        }
+        double inset = (1.0 - this.boxSize.getValue() / 100.0) * 0.5;
         int rendered = 0;
-        boolean drawTracers = this.tracers.getValue();
+        int index = 0;
         block0: for (List<BlockEntry> chunkEntries : this.results.values()) {
             for (BlockEntry blockEntry : chunkEntries) {
-                StorageBlocksSetting.Entry entry;
                 class_2338 pos = blockEntry.pos();
-                if (!drawTracers && !RenderVisibility.box(pos.method_10263(), pos.method_10264(), pos.method_10260(), pos.method_10263() + 1, pos.method_10264() + 1, pos.method_10260() + 1) || (entry = this.selected.get(blockEntry.block())) == null) continue;
-                Color rgb = entry.color();
-                Color color = new Color(rgb.getRed(), rgb.getGreen(), rgb.getBlue(), opacity);
-                this.renderBoxes.add(new RenderUtils.ColoredBox((double)pos.method_10263() + 0.08, (double)pos.method_10264() + 0.08, (double)pos.method_10260() + 0.08, (double)pos.method_10263() + 0.92, (double)pos.method_10264() + 0.92, (double)pos.method_10260() + 0.92, color));
-                if (drawTracers) {
-                    this.renderLines.add(new RenderUtils.ColoredLine(tracerStart, new class_243((double)pos.method_10263() + 0.5, (double)pos.method_10264() + 0.5, (double)pos.method_10260() + 0.5), color, 1.5f));
-                }
+                StorageBlocksSetting.Entry entry = this.selected.get(blockEntry.block());
+                if (entry == null) continue;
+                if (!this.style.inRange(pos.method_10263() + 0.5, pos.method_10264() + 0.5, pos.method_10260() + 0.5)) continue;
+                if (!this.style.wantsTracers() && !RenderVisibility.box(pos.method_10263(), pos.method_10264(), pos.method_10260(), pos.method_10263() + 1, pos.method_10264() + 1, pos.method_10260() + 1)) continue;
+                this.style.box(pos.method_10263() + inset, pos.method_10264() + inset, pos.method_10260() + inset,
+                        pos.method_10263() + 1 - inset, pos.method_10264() + 1 - inset, pos.method_10260() + 1 - inset, entry.color(), index++);
                 if (++rendered < 4096) continue;
                 break block0;
             }
@@ -291,8 +291,7 @@ extends Module {
         class_4587 matrices = event.matrixStack;
         matrices.method_22903();
         RenderUtils.applyCameraTransform(matrices, camera);
-        RenderUtils.renderFilledBoxes(matrices, this.renderBoxes);
-        RenderUtils.renderLines(matrices, this.renderLines);
+        this.style.render(matrices);
         matrices.method_22909();
     }
 

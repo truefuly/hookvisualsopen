@@ -58,10 +58,8 @@ extends Module {
     private static final List<Integer> OVERWORLD_LEVELS = List.of(Integer.valueOf(-64), Integer.valueOf(-63), Integer.valueOf(-62), Integer.valueOf(-61), Integer.valueOf(-60));
     private static final List<Integer> NETHER_LEVELS = List.of(Integer.valueOf(0), Integer.valueOf(1), Integer.valueOf(2), Integer.valueOf(3), Integer.valueOf(4), Integer.valueOf(123), Integer.valueOf(124), Integer.valueOf(125), Integer.valueOf(126), Integer.valueOf(127));
     private final NumberSetting minimumSize = new NumberSetting(EncryptedString.of("Minimum Void Size"), 1.0, 50.0, 2.0, 1.0);
-    private final NumberSetting alpha = new NumberSetting(EncryptedString.of("Alpha"), 0.0, 255.0, 100.0, 1.0);
-    private final ModeSetting<EspStyle> renderMode = new ModeSetting<EspStyle>(EncryptedString.of("Render Mode"), EspStyle.Box, EspStyle.class).setDescription(EncryptedString.of("Filled box, outline only, or both"));
+    private final hook.utils.EspStyle style = new hook.utils.EspStyle(hook.utils.EspStyle.Shape.Both, 70, 0xFFF05550);
     private final StorageBlocksSetting color = new StorageBlocksSetting(EncryptedString.of("Color")).add("void", "Void", class_1802.field_8542, true, new Color(240, 85, 80)).colorOnly();
-    private final BooleanSetting tracers = new BooleanSetting(EncryptedString.of("Tracers"), false);
     private final BooleanSetting chatFeedback = new BooleanSetting(EncryptedString.of("Chat Feedback"), true);
     private final Set<class_2338> voidBlocks = new HashSet<class_2338>();
     private final Map<Long, Set<class_2338>> voidsByChunk = new HashMap<Long, Set<class_2338>>();
@@ -76,7 +74,9 @@ extends Module {
 
     public BedrockEspModule() {
         super(EncryptedString.of("Bedrock ESP"), EncryptedString.of("Finds enclosed gaps in the overworld and nether bedrock layers"), -1, Category.RENDER);
-        this.addSettings(this.minimumSize, this.alpha, this.renderMode, this.color, this.tracers, this.chatFeedback);
+        this.addSettings(this.minimumSize);
+        this.addSettings(this.style.settings());
+        this.addSettings(this.color, this.chatFeedback);
     }
 
     @Override
@@ -278,13 +278,11 @@ extends Module {
         matrices.method_22903();
         RenderUtils.applyCameraTransform(matrices, camera);
         Color base = this.color.entries().get(0).color();
-        Color fill = new Color(base.getRed(), base.getGreen(), base.getBlue(), this.alpha.getIntValue());
-        Color line = new Color(Math.min(255, base.getRed() + 15), Math.min(255, base.getGreen() + 15), Math.min(255, base.getBlue() + 15), Math.max(160, this.alpha.getIntValue()));
-        boolean drawFill = !this.renderMode.isMode(EspStyle.Outline);
-        boolean drawOutline = !this.renderMode.isMode(EspStyle.Box);
-        this.renderBoxes.clear();
-        this.renderLines.clear();
-        class_243 tracerOrigin = RenderUtils.getTracerStart(camera);
+        if (!this.style.begin(camera)) {
+            matrices.method_22909();
+            return;
+        }
+        int index = 0;
         for (class_2338 pos : this.voidBlocks) {
             double x0 = (double)pos.method_10263() + 0.03;
             double y0 = (double)pos.method_10264() + 0.03;
@@ -292,18 +290,9 @@ extends Module {
             double x1 = (double)pos.method_10263() + 0.97;
             double y1 = (double)pos.method_10264() + 0.97;
             double z1 = (double)pos.method_10260() + 0.97;
-            if (!this.tracers.getValue() && !RenderVisibility.box(x0, y0, z0, x1, y1, z1)) continue;
-            if (drawFill && this.alpha.getIntValue() > 0) {
-                this.renderBoxes.add(new RenderUtils.ColoredBox(x0, y0, z0, x1, y1, z1, fill));
-            }
-            if (drawOutline) {
-                RenderUtils.addBoxOutline(this.renderLines, x0, y0, z0, x1, y1, z1, line, 1.5f);
-            }
-            if (!this.tracers.getValue()) continue;
-            this.renderLines.add(new RenderUtils.ColoredLine(tracerOrigin, class_243.method_24953((class_2382)pos), line, 1.5f));
+            this.style.box(x0, y0, z0, x1, y1, z1, base, index++);
         }
-        RenderUtils.renderFilledBoxes(matrices, this.renderBoxes);
-        RenderUtils.renderLines(matrices, this.renderLines);
+        this.style.render(matrices);
         matrices.method_22909();
     }
 

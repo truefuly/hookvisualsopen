@@ -81,8 +81,8 @@ import net.minecraft.class_8887;
 
 public final class StorageEspModule
 extends Module {
-    private final NumberSetting alpha = new NumberSetting(EncryptedString.of("Alpha"), 0.0, 255.0, 53.0, 1.0);
-    private final BooleanSetting tracers = new BooleanSetting(EncryptedString.of("Tracers"), false);
+    private final hook.utils.EspStyle style = new hook.utils.EspStyle(hook.utils.EspStyle.Shape.Both, 45, 0xFFFFB347);
+    private final NumberSetting boxSize = new NumberSetting(EncryptedString.of("Box Size"), 50.0, 100.0, 92.0, 1.0).getValue(EncryptedString.of("Size of the box in percent of the storage block"));
     private final StorageBlocksSetting storages = new StorageBlocksSetting(EncryptedString.of("Storages")).add("chest", "Chest", class_1802.field_8106, true, new Color(156, 91, 0)).add("ender_chest", "Ender Chest", class_1802.field_8466, true, new Color(127, 91, 255)).add("shulker", "Shulker Box", class_1802.field_8545, true, new Color(236, 85, 204)).add("spawner", "Spawner", class_1802.field_8849, true, new Color(255, 76, 98)).add("furnace", "Furnace", class_1802.field_8732, true, new Color(102, 168, 255)).add("barrel", "Barrel", class_1802.field_16307, true, new Color(232, 151, 70)).add("enchanting_table", "Enchanting Table", class_1802.field_8657, true, new Color(62, 224, 207)).add("piston", "Moving Piston", class_1802.field_8249, true, new Color(151, 224, 88)).add("hopper", "Hopper", class_1802.field_8239, true, new Color(0, 0, 255)).add("dispenser", "Dispenser", class_1802.field_8357, false, new Color(95, 188, 255)).add("dropper", "Dropper", class_1802.field_8878, false, new Color(118, 134, 162)).add("brewing_stand", "Brewing Stand", class_1802.field_8740, false, new Color(249, 115, 140)).add("crafter", "Crafter", class_1802.field_46791, false, new Color(255, 195, 72)).add("chiseled_bookshelf", "Chiseled Bookshelf", class_1802.field_40215, false, new Color(189, 126, 255)).add("decorated_pot", "Decorated Pot", class_1802.field_42699, false, new Color(223, 119, 92));
     private List<StoragePair> targets = List.of();
     private final List<RenderUtils.ColoredBox> renderBoxes = new ArrayList<RenderUtils.ColoredBox>();
@@ -93,7 +93,8 @@ extends Module {
 
     public StorageEspModule() {
         super(EncryptedString.of("Storage ESP"), EncryptedString.of("Highlights selected loaded storage blocks through walls"), -1, Category.RENDER);
-        this.addSettings(this.alpha, this.tracers, this.storages);
+        this.addSettings(this.style.settings());
+        this.addSettings(this.boxSize, this.storages);
     }
 
     @Override
@@ -213,33 +214,25 @@ extends Module {
         class_4587 matrices = event.matrixStack;
         matrices.method_22903();
         RenderUtils.applyCameraTransform(matrices, camera);
-        this.renderBoxes.clear();
-        this.renderLines.clear();
-        class_243 tracerOrigin = StorageEspModule.tracerStart(camera);
+        if (!this.style.begin(camera)) {
+            matrices.method_22909();
+            return;
+        }
+        double inset = (1.0 - this.boxSize.getValue() / 100.0) * 0.5;
+        int index = 0;
         for (StoragePair pair : this.targets) {
             StorageBlocksSetting.Entry entry = this.storages.get(pair.type().id);
             if (entry == null || !entry.enabled()) continue;
-            Color rgb = entry.color();
-            int argb = this.alpha.getIntValue() << 24 | rgb.getRGB() & 0xFFFFFF;
-            Color color = this.renderColors[pair.type().ordinal()];
-            if (color == null || color.getRGB() != argb) {
-                this.renderColors[pair.type().ordinal()] = color = new Color(argb, true);
-            }
             int minX = Math.min(pair.first().method_10263(), pair.second().method_10263());
             int minY = Math.min(pair.first().method_10264(), pair.second().method_10264());
             int minZ = Math.min(pair.first().method_10260(), pair.second().method_10260());
             int maxX = Math.max(pair.first().method_10263(), pair.second().method_10263()) + 1;
             int maxY = Math.max(pair.first().method_10264(), pair.second().method_10264()) + 1;
             int maxZ = Math.max(pair.first().method_10260(), pair.second().method_10260()) + 1;
-            if (!this.tracers.getValue() && !RenderVisibility.box(minX, minY, minZ, maxX, maxY, maxZ) || !this.targetStillLive(pair)) continue;
-            if (this.alpha.getIntValue() > 0) {
-                this.renderBoxes.add(new RenderUtils.ColoredBox((double)minX + 0.08, (double)minY + 0.08, (double)minZ + 0.08, (double)maxX - 0.08, (double)maxY - 0.08, (double)maxZ - 0.08, color));
-            }
-            if (!this.tracers.getValue()) continue;
-            this.renderLines.add(new RenderUtils.ColoredLine(tracerOrigin, pair.center(), color, 1.5f));
+            if (!this.style.wantsTracers() && !RenderVisibility.box(minX, minY, minZ, maxX, maxY, maxZ) || !this.targetStillLive(pair)) continue;
+            this.style.box(minX + inset, minY + inset, minZ + inset, maxX - inset, maxY - inset, maxZ - inset, entry.color(), index++);
         }
-        RenderUtils.renderFilledBoxes(matrices, this.renderBoxes);
-        RenderUtils.renderLines(matrices, this.renderLines);
+        this.style.render(matrices);
         matrices.method_22909();
     }
 

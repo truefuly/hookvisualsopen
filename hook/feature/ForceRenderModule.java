@@ -24,10 +24,30 @@ public final class ForceRenderModule extends Module {
     private Boolean savedFog;
     private Boolean savedEntities;
     private boolean applied;
+    private static ForceRenderModule instance;
 
     public ForceRenderModule() {
         super(EncryptedString.of("Force Render"), EncryptedString.of("Renders everything the server sent you, even when performance mods would skip it"), -1, Category.RENDER);
         this.addSettings(this.occlusion, this.fog, this.entities);
+        instance = this;
+    }
+
+    /**
+     * Sodium's chunk search radius around the camera. With Force Render on it reaches every chunk the server sent,
+     * even when Freecam took the camera far away from the player: distance camera-to-player plus the loaded radius.
+     */
+    public static float searchDistance(float base) {
+        ForceRenderModule m = instance;
+        if (m == null || !m.isEnabled() || m.mc == null || m.mc.field_1724 == null || m.mc.field_1690 == null) return base;
+        net.minecraft.class_4184 cam = m.mc.field_1773 == null ? null : m.mc.field_1773.method_19418();
+        double away = 0.0;
+        if (cam != null) {
+            net.minecraft.class_243 c = cam.method_71156();
+            double dx = c.field_1352 - m.mc.field_1724.method_23317(), dz = c.field_1350 - m.mc.field_1724.method_23321();
+            away = Math.sqrt(dx * dx + dz * dz);
+        }
+        int loaded = Math.max(m.mc.field_1690.method_38521(), 2) + 2; // server view distance is at most this
+        return (float) Math.max(base, away + loaded * 16.0 + 16.0);
     }
 
     @Override

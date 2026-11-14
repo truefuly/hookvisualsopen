@@ -97,7 +97,9 @@
     "NoFogVoidMixin",
     "SwordcoreSoundMuteMixin",
     "AntiBreakMixin",
-    "NoParticlesMixin"
+    "NoParticlesMixin",
+    "ForceRenderSodiumMixin",
+    "AutoMinerBreakMixin"
   ],
   "injectors": {
     "defaultRequire": 1

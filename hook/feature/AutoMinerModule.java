@@ -32,10 +32,23 @@ public final class AutoMinerModule extends Module {
 
     private int waitTicks;
     private boolean warnedEmpty;
+    private static AutoMinerModule instance;
+    private static long breakingTick = Long.MIN_VALUE;
+    private long tickCounter;
+
+    /**
+     * True while Auto Miner is mining a block this tick. Vanilla cancels block breaking every tick the attack key is
+     * not held, which would reset the progress, so that check is skipped while this is set.
+     */
+    public static boolean ownsBreaking() {
+        AutoMinerModule m = instance;
+        return m != null && m.isEnabled() && breakingTick == m.tickCounter;
+    }
 
     public AutoMinerModule() {
         super(EncryptedString.of("Auto Miner"), EncryptedString.of("Places your chosen block from the offhand and mines it again and again"), -1, Category.MISC);
         this.addSettings(this.block, this.placeDelay, this.restock, this.place, this.mine);
+        instance = this;
     }
 
     @Override
@@ -53,7 +66,9 @@ public final class AutoMinerModule extends Module {
 
     @EventListener
     public void onTick(TickEvent event) {
-        if (this.mc.field_1724 == null || this.mc.field_1687 == null || this.mc.field_1761 == null || this.mc.field_1755 != null) return;
+        // keeps working with a GUI or the pause menu open and while tabbed out (only a singleplayer pause stops ticks)
+        this.tickCounter++;
+        if (this.mc.field_1724 == null || this.mc.field_1687 == null || this.mc.field_1761 == null) return;
         class_1792 wanted = this.block.getItem();
         if (!(wanted instanceof class_1747 blockItem)) return;
 
@@ -69,6 +84,7 @@ public final class AutoMinerModule extends Module {
 
         if (chosen) {
             if (!this.mine.getValue()) return;
+            breakingTick = this.tickCounter;
             this.mc.field_1761.method_2902(pos, hit.method_17780());
             this.mc.field_1724.method_6104(class_1268.field_5808);
             this.waitTicks = this.placeDelay.getIntValue();

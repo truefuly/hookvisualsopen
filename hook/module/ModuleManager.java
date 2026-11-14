@@ -263,7 +263,7 @@ public final class ModuleManager {
                 boolean var2x;
                 // The menu key only works in-game (no screen) or to close the menu itself - never in chat,
                 // inventories, the pause menu or any other screen.
-                if (var1x.getKeybind() == var1.key && ((var2x = var1x instanceof Hook) ? menuKeyAllowed() : hook.Hook.mc.field_1724 != null && hook.Hook.mc.field_1690 != null && !(hook.Hook.mc.field_1755 instanceof class_408))) {
+                if (var1x.getKeybind() == var1.key && ((var2x = var1x instanceof Hook) ? menuKeyAllowed() : playingNormally())) {
                     var1x.toggle();
                     this.autosaveTicks = 180; // save about a second after a keybind toggle
                 }
@@ -276,12 +276,17 @@ public final class ModuleManager {
         if (var1.actions == 1 && var1.button >= 0 && var1.button <= 7 && !(hook.Hook.mc.field_1755 instanceof HookClickGuiScreen) && !(hook.Hook.mc.field_1755 instanceof class_408)) {
             this.modules.forEach(var1x -> {
                 boolean var2;
-                if (var1x.getKeybind() == var1.button && ((var2 = var1x instanceof Hook) ? menuKeyAllowed() : hook.Hook.mc.field_1724 != null && hook.Hook.mc.field_1690 != null)) {
+                if (var1x.getKeybind() == var1.button && ((var2 = var1x instanceof Hook) ? menuKeyAllowed() : playingNormally())) {
                     var1x.toggle();
                     this.autosaveTicks = 180; // save about a second after a keybind toggle
                 }
             });
         }
+    }
+
+    /** Module keybinds only work while you play: in a world with no screen (chat, inventory, menus, editors) open. */
+    private static boolean playingNormally() {
+        return hook.Hook.mc != null && hook.Hook.mc.field_1724 != null && hook.Hook.mc.field_1690 != null && hook.Hook.mc.field_1755 == null;
     }
 
     private static boolean menuKeyAllowed() {
