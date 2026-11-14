@@ -1958,11 +1958,14 @@ public final class HookUiController {
         }
         if (this.listening != null) {
             if (var1 == 256) {
-                this.listening = null;
+                // Esc unbinds; the menu key can't be left unbound, so it goes back to Right Shift
+                boolean menuKey = this.listening.isModuleKey() && this.listeningModule instanceof hook.module.modules.client.Hook;
+                this.assignBind(this.listening, this.listeningModule, menuKey ? 344 : -1);
             } else if (var1 != 259 && var1 != 261) {
                 this.assignBind(this.listening, this.listeningModule, var1);
             } else {
-                this.assignBind(this.listening, this.listeningModule, -1);
+                boolean menuKey = this.listening.isModuleKey() && this.listeningModule instanceof hook.module.modules.client.Hook;
+                this.assignBind(this.listening, this.listeningModule, menuKey ? 344 : -1);
             }
             return true;
         }
